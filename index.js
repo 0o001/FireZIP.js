@@ -1,56 +1,60 @@
 class FireZIP {
     static encode(text) {
-
-        let base36 = toBigInt36(text);
         const perChunk = 4;
-        let base36String = (base36).toString();
-        let base36StringToArray = [...base36String];
 
-        let base36ArrayToFill = fillArray(base36StringToArray, perChunk);
+        const bytes = new TextEncoder().encode(text);
 
-        let base36ArrayToChunk = chunk(base36ArrayToFill, perChunk);
+        let bigInt = BigInt(0);
+        for (const byte of bytes) {
+            bigInt = (bigInt << BigInt(8)) | BigInt(byte);
+        }
+
+        let digits = bigInt.toString();
+        let arr = [...digits];
+        let filled = fillArray(arr, perChunk);
+        let chunked = chunkArray(filled, perChunk);
 
         let unicodeString = '';
-
-        for (const unicode of base36ArrayToChunk) {
-            unicodeString += String.fromCodePoint(parseInt(unicode.join('')));
+        for (const group of chunked) {
+            unicodeString += String.fromCodePoint(parseInt(group.join('')));
         }
-
-        return unicodeString;
-
-        function toBigInt36(text) {
-            const multiplier = BigInt(Math.pow(36, 10));
-            const chunks = text.match(/.{1,10}/g);
-            let result = BigInt(0);
-            chunks.forEach((chunk) => {
-                result = result * multiplier + BigInt(parseInt(chunk, 36))
-            });
-    
-            return result;
-        }
-
-        function chunk(array, perChunk) {
-            return array.reduce((all,one,i) => {
-                const ch = Math.floor(i/perChunk); 
-                all[ch] = [].concat((all[ch]||[]),one); 
-                return all
-             }, [])
-        }
-
-        function fillArray(arr, value) {
-            while (arr.length % 4 !== 0) {
-              arr.push(value);
-            }
-            return arr;
-          }
-    }
-    static decode(text) {
-        let unicodeString = '';
-
-        for (const unicode of text) {
-            unicodeString += unicode.charCodeAt();
-        }
-
         return unicodeString;
     }
+
+    static decode(encodedText) {
+        let digits = '';
+
+        for (const char of encodedText) {
+            let code = char.codePointAt(0).toString();
+            while (code.length < 4) code = '0' + code;
+            digits += code;
+        }
+
+        digits = digits.replace(/^0+/, '');
+
+        let bigInt = BigInt(digits);
+
+        const bytes = [];
+        while (bigInt > 0n) {
+            bytes.unshift(Number(bigInt & BigInt(0xFF)));
+            bigInt >>= BigInt(8);
+        }
+
+        return new TextDecoder().decode(new Uint8Array(bytes));
+    }
+}
+
+function chunkArray(array, perChunk) {
+    return array.reduce((all, one, i) => {
+        const ch = Math.floor(i / perChunk);
+        all[ch] = [].concat((all[ch] || []), one);
+        return all;
+    }, []);
+}
+
+function fillArray(arr, perChunk) {
+    while (arr.length % perChunk !== 0) {
+        arr.unshift('0');
+    }
+    return arr;
 }
