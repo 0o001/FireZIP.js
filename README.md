@@ -2,10 +2,15 @@
 
 ```js
 
-const text = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore '
-
-console.log('text:', text, ',', 'length:', text.length)
-console.log('encoded:', FireZIP.encode(text), ',', 'length:', FireZIP.encode(text).length)
-console.log('decoded:', FireZIP.decode(FireZIP.encode(text)))
+const testCases = ["hello", "merhaba dünya", "日本語", "123 !@#"];
+for (const test of testCases) {
+    const encoded = FireZIP.encode(test);
+    const decoded = FireZIP.decode(encoded);
+    console.log(`Original : "${test}"`);
+    console.log(`Encoded  : "${encoded}"`);
+    console.log(`Decoded  : "${decoded}"`);
+    console.log(`Equal: ${decoded === test}`);
+    console.log('---');
+}
 
 ```
